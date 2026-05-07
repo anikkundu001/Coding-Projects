@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Directed Graph: Adjacency Matrix + Chart | In/Out Degree</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #eef2ff;
+            margin: 0;
+            padding: 24px 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2);
+            overflow: hidden;
+            padding: 24px 28px 36px;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 0.25rem;
+            background: linear-gradient(135deg, #0f2b3d, #1e4a76);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            color: #334155;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
+            margin-bottom: 28px;
+            font-weight: 400;
+        }
+        .controls {
+            background: #f8fafc;
+            padding: 20px 24px;
+            border-radius: 28px;
+            margin-bottom: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 20px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .input-group label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1e293b;
+        }
+        input {
+            padding: 10px 16px;
+            font-size: 1rem;
+            border-radius: 24px;
+            border: 1px solid #cbd5e1;
+            width: 140px;
+        }
+        button {
+            background: #0f172a;
+            border: none;
+            padding: 10px 26px;
+            border-radius: 32px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 18px;
+        }
+        button:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+        .stats-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: #f1f5f9;
+            border-radius: 24px;
+            padding: 12px 20px;
+            flex: 1;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .stat-number {
+            font-size: 1.9rem;
+            font-weight: 800;
+        }
+        .equal-badge {
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 40px;
+            padding: 6px 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .chart-section {
+            margin: 32px 0 28px;
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 12px 8px 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #eef2ff;
+        }
+        canvas {
+            max-height: 360px;
+            width: 100%;
+        }
+        /* Matrix double view */
+        .matrix-panel {
+            margin-top: 32px;
+            border-radius: 28px;
+            background: #fefefe;
+            border: 1px solid #e2edf7;
+            overflow: hidden;
+        }
+        .matrix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 12px 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid #dce5f0;
+        }
+        .matrix-header h3 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toggle-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .toggle-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 0;
+            transition: 0.1s;
+        }
+        .toggle-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+        .matrix-display-area {
+            padding: 20px;
+            overflow-x: auto;
+            transition: 0.2s;
+            background: #ffffff;
+        }
+        .grid-matrix {
+            display: inline-grid;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 20px;
+        }
+        .matrix-cell-grid {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+        .cell-1 {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .cell-0 {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .plain-matrix {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 20px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+        }
+        .note {
+            font-size: 0.7rem;
+            color: #4a5b7a;
+            margin-top: 22px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 18px;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #5b6e8c;
+        }
+        @media (max-width: 640px) {
+            .matrix-cell-grid { width: 32px; height: 32px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📐 Adjacency Matrix Explorer</h1>
+    <div class="sub">Random directed graph (rand()%2) · Sum of in/out degree · Interactive chart + matrix</div>
+
+    <div class="controls">
+        <div class="input-group">
+            <label>🔷 Vertices (n)</label>
+            <input type="number" id="vertexCount" min="1" max="22" value="6" step="1">
+        </div>
+        <button id="generateBtn">🎲 Generate Random Graph</button>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-panel">
+        <div class="stat-card"><h3>📥 SUM IN-DEGREE</h3><div class="stat-number" id="sumIndegreeDisplay">0</div></div>
+        <div class="stat-card"><h3>📤 SUM OUT-DEGREE</h3><div class="stat-number" id="sumOutdegreeDisplay">0</div></div>
+        <div class="stat-card"><h3>⚖️ EQUAL?</h3><div id="equalityMsg" class="equal-badge" style="background:#e2e8f0; color:#1e293b;">—</div></div>
+        <div class="stat-card"><h3>⏱️ TIME (ms)</h3><div class="stat-number" id="timeMsDisplay" style="font-size:1.5rem;">0.00</div></div>
+    </div>
+
+    <!-- CHART: Indegree vs Outdegree per node -->
+    <div class="chart-section">
+        <div style="font-weight: 600; margin-bottom: 12px;">📊 Per-vertex degree comparison</div>
+        <canvas id="degreeChartCanvas" width="800" height="350"></canvas>
+    </div>
+
+    <!-- ADJACENCY MATRIX SECTION (Double view: graphical grid + plain text) -->
+    <div class="matrix-panel">
+        <div class="matrix-header">
+            <h3>🧩 Adjacency Matrix (A[i][j] = 1 if edge i→j exists)</h3>
+            <div class="toggle-buttons">
+                <button id="showGridBtn" class="toggle-btn active">🎨 Visual Grid</button>
+                <button id="showPlainBtn" class="toggle-btn">📄 Plain Text Matrix</button>
+            </div>
+        </div>
+        <div id="matrixDisplayArea" class="matrix-display-area">
+            <!-- dynamic content: either grid or plain text -->
+            <div style="text-align:center; color:#6c757d;">✨ Generate matrix to see representation</div>
+        </div>
+    </div>
+    <div class="note">
+        📌 Implementation exactly follows your C code: random 0/1 for each ordered pair (i,j).<br>
+        📌 Sum of in-degree = total number of edges = sum of out-degree. Chart shows per-node indegree (blue) and outdegree (orange).<br>
+        📌 Adjacency matrix available in two formats: graphical heatmap or traditional console‑style matrix.
+    </div>
+    <footer>Directed random graph | self-loops possible | computational time measured for generation + degree sums</footer>
+</div>
+
+<script>
+    let currentChart = null;
+    let currentMatrix = [];
+    let currentIndegArr = [];
+    let currentOutdegArr = [];
+    let currentView = "grid";  // 'grid' or 'plain'
+
+    // DOM elements
+    const vertexInput = document.getElementById('vertexCount');
+    const generateBtn = document.getElementById('generateBtn');
+    const sumIndegreeSpan = document.getElementById('sumIndegreeDisplay');
+    const sumOutdegreeSpan = document.getElementById('sumOutdegreeDisplay');
+    const equalityMsgDiv = document.getElementById('equalityMsg');
+    const timeMsSpan = document.getElementById('timeMsDisplay');
+    const matrixDisplayArea = document.getElementById('matrixDisplayArea');
+    const showGridBtn = document.getElementById('showGridBtn');
+    const showPlainBtn = document.getElementById('showPlainBtn');
+
+    // generate random adjacency matrix [0/1] identical to rand()%2
+    function generateRandomMatrix(n) {
+        const mat = Array(n).fill().map(() => Array(n).fill(0));
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                mat[i][j] = Math.floor(Math.random() * 2);
+            }
+        }
+        return mat;
+    }
+
+    // compute indegree per node, outdegree per node, and totals
+    function computeDegrees(matrix) {
+        const n = matrix.length;
+        const indeg = Array(n).fill(0);
+        const outdeg = Array(n).fill(0);
+        let totalIndeg = 0, totalOutdeg = 0;
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                if (matrix[i][j] === 1) {
+                    outdeg[i]++;   // edge from i -> j
+                    indeg[j]++;     // edge enters j
+                }
+            }
+        }
+        for (let i = 0; i < n; i++) {
+            totalIndeg += indeg[i];
+            totalOutdeg += outdeg[i];
+        }
+        return { indegreeArr: indeg, outdegreeArr: outdeg, totalIndegree: totalIndeg, totalOutdegree: totalOutdeg };
+    }
+
+    // render visual grid (colored)
+    function renderGridMatrix(matrix) {
+        const n = matrix.length;
+        if (n === 0) return '<div style="padding:20px;">Empty matrix</div>';
+        const gridContainer = document.createElement('div');
+        gridContainer.style.display = 'flex';
+        gridContainer.style.justifyContent = 'center';
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'grid-matrix';
+        gridDiv.style.gridTemplateColumns = `repeat(${n}, minmax(38px, 48px))`;
+        gridDiv.style.gap = '5px';
+        
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                const val = matrix[i][j];
+                const cell = document.createElement('div');
+                cell.className = `matrix-cell-grid ${val === 1 ? 'cell-1' : 'cell-0'}`;
+                cell.textContent = val;
+                cell.title = `a[${i}][${j}] = ${val}`;
+                gridDiv.appendChild(cell);
+            }
+        }
+        gridContainer.appendChild(gridDiv);
+        // add row/col hint
+        const hint = document.createElement('div');
+        hint.style.marginTop = '12px';
+        hint.style.fontSize = '0.7rem';
+        hint.style.color = '#475569';
+        hint.innerHTML = '🔹 <strong>Rows = source vertex (out)</strong> | Columns = target vertex (in) &nbsp;&nbsp; 🔵 = 1 (edge) &nbsp; ⚪ = 0';
+        gridContainer.appendChild(hint);
+        return gridContainer;
+    }
+
+    // render plain-text adjacency matrix like classic C output: rows separated by spaces
+    function renderPlainMatrix(matrix) {
+        const n = matrix.length;
+        let text = `Adjacency Matrix (${n} x ${n}):\n`;
+        for (let i = 0; i < n; i++) {
+            let rowStr = '';
+            for (let j = 0; j < n; j++) {
+                rowStr += matrix[i][j] + ' ';
+            }
+            text += rowStr.trim() + '\n';
+        }
+        text += `\n// Each row i -> column j represents edge from vertex ${0}..${n-1}`;
+        const pre = document.createElement('pre');
+        pre.className = 'plain-matrix';
+        pre.textContent = text;
+        return pre;
+    }
+
+    // update display area based on current view and current matrix
+    function updateMatrixDisplay() {
+        if (!currentMatrix || currentMatrix.length === 0) {
+            matrixDisplayArea.innerHTML = '<div style="padding: 20px; text-align:center;">⚠️ No matrix generated. Click "Generate".</div>';
+            return;
+        }
+        if (currentView === 'grid') {
+            const gridElem = renderGridMatrix(currentMatrix);
+            matrixDisplayArea.innerHTML = '';
+            matrixDisplayArea.appendChild(gridElem);
+        } else {
+            const plainElem = renderPlainMatrix(currentMatrix);
+            matrixDisplayArea.innerHTML = '';
+            matrixDisplayArea.appendChild(plainElem);
+        }
+    }
+
+    // update Chart.js with indegree/outdegree arrays
+    function updateChart(indegreeArr, outdegreeArr) {
+        const n = indegreeArr.length;
+        const ctx = document.getElementById('degreeChartCanvas').getContext('2d');
+        const labels = Array.from({ length: n }, (_, i) => `v${i}`);
+        if (currentChart) currentChart.destroy();
+        currentChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Indegree', data: indegreeArr, backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 8, borderColor: '#1e40af', borderWidth: 1 },
+                    { label: 'Outdegree', data: outdegreeArr, backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 8, borderColor: '#c2410c', borderWidth: 1 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}` } }, legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Degree count' }, ticks: { precision: 0 } }, x: { title: { display: true, text: 'Vertex' } } }
+            }
+        });
+    }
+
+    // Main analysis (C-like simulation)
+    function runAnalysis() {
+        let n = parseInt(vertexInput.value, 10);
+        if (isNaN(n) || n < 1) n = 4;
+        if (n > 24) { alert('Max vertices: 24 (performance & viz)'); n = 24; vertexInput.value = 24; }
+        
+        const startPerf = performance.now();
+        const matrix = generateRandomMatrix(n);
+        const { indegreeArr, outdegreeArr, totalIndegree, totalOutdegree } = computeDegrees(matrix);
+        const endPerf = performance.now();
+        const elapsedMs = endPerf - startPerf;
+        
+        currentMatrix = matrix;
+        currentIndegArr = indegreeArr;
+        currentOutdegArr = outdegreeArr;
+        
+        // update stats
+        sumIndegreeSpan.textContent = totalIndegree;
+        sumOutdegreeSpan.textContent = totalOutdegree;
+        if (totalIndegree === totalOutdegree) {
+            equalityMsgDiv.innerHTML = '✅ EQUAL ✓';
+            equalityMsgDiv.style.background = '#dcfce7';
+            equalityMsgDiv.style.color = '#166534';
+        } else {
+            equalityMsgDiv.innerHTML = '⚠️ UNEXPECTED';
+            equalityMsgDiv.style.background = '#fee2e2';
+        }
+        timeMsSpan.textContent = `${elapsedMs.toFixed(3)} ms`;
+        
+        // update chart
+        updateChart(indegreeArr, outdegreeArr);
+        // update matrix display based on current view (grid or plain)
+        updateMatrixDisplay();
+    }
+    
+    // toggle view handlers
+    function setView(view) {
+        currentView = view;
+        if (view === 'grid') {
+            showGridBtn.classList.add('active');
+            showPlainBtn.classList.remove('active');
+        } else {
+            showPlainBtn.classList.add('active');
+            showGridBtn.classList.remove('active');
+        }
+        updateMatrixDisplay();
+    }
+    
+    // event binding
+    generateBtn.addEventListener('click', () => runAnalysis());
+    showGridBtn.addEventListener('click', () => setView('grid'));
+    showPlainBtn.addEventListener('click', () => setView('plain'));
+    
+    // initial load with n=6
+    window.addEventListener('DOMContentLoaded', () => {
+        runAnalysis();
+    });
+</script>
+</body>
+</html>
